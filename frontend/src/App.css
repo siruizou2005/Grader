@@ -1,0 +1,63 @@
+.app {
+  min-height: 100vh;
+}
+
+.header {
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 16px 0;
+  margin-bottom: 24px;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h1 {
+  font-size: 24px;
+  color: #333;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.header-actions span {
+  color: #666;
+}
+
+.nav {
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 24px;
+}
+
+.nav-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  gap: 24px;
+}
+
+.nav-link {
+  padding: 16px 0;
+  color: #666;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+}
+

@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads
+uploads/
+# 注意：README.md 和 package.json 等配置文件需要被提交，所以不忽略所有 .md 和 .json
+# 只忽略上传的文件
+uploads/**/*.pdf
+uploads/**/*.md
+uploads/**/*.json
+uploads/**/*.xlsx
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build
+dist/
+build/
+*.log
+
+# Frontend
+frontend/dist/
+frontend/.vite/
+
