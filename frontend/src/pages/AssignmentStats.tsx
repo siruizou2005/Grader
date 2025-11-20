@@ -84,7 +84,7 @@ export default function AssignmentStats() {
     const taskId = `download-excel-${id}-${Date.now()}`
     setDownloading(true)
     addBackgroundTask(taskId)
-    
+
     try {
       const response = await client.get(`/teachers/assignments/${id}/download-excel`, {
         responseType: 'blob'
@@ -122,16 +122,16 @@ export default function AssignmentStats() {
     // 直接导航到新页面
     window.open(`/teacher/assignments/${id}/excel`, '_blank')
   }
-  
+
   const handleGenerateClassReport = async () => {
     if (!confirm('确定要生成全班学情报告吗？这将汇总所有学生的批改报告并生成综合分析。')) {
       return
     }
-    
+
     const taskId = `generate-report-${id}-${Date.now()}`
     setGeneratingReport(true)
     addBackgroundTask(taskId)
-    
+
     try {
       const response = await client.post(`/teachers/assignments/${id}/generate-class-report`)
       setHasReports(true)
@@ -156,7 +156,7 @@ export default function AssignmentStats() {
     const taskId = `load-homework-${submissionId}-${Date.now()}`
     setLoadingHomework(submissionId)
     addBackgroundTask(taskId)
-    
+
     try {
       const response = await client.get(
         `/teachers/assignments/${id}/submissions/${submissionId}/homework`,
@@ -275,9 +275,9 @@ export default function AssignmentStats() {
               <div key={grade} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
                 <div style={{ width: '60px' }}>{grade}</div>
                 <div style={{ flex: 1, background: '#f0f0f0', borderRadius: '4px', marginLeft: '12px', marginRight: '12px' }}>
-                  <div style={{ 
-                    background: '#007bff', 
-                    height: '24px', 
+                  <div style={{
+                    background: '#007bff',
+                    height: '24px',
                     borderRadius: '4px',
                     width: `${(count / stats.submitted_count) * 100}%`,
                     display: 'flex',
@@ -345,11 +345,23 @@ export default function AssignmentStats() {
                 <div>
                   <strong>{sub.student_name}</strong> ({sub.student_id_str || sub.student_id})
                   {sub.grade && <span style={{ marginLeft: '12px', color: '#666' }}>等级: {sub.grade}</span>}
+                  {!sub.grade && (
+                    <span style={{
+                      marginLeft: '12px',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      background: sub.status === 'processing' ? '#cce5ff' : sub.status === 'failed' ? '#f8d7da' : '#e2e3e5',
+                      color: sub.status === 'processing' ? '#004085' : sub.status === 'failed' ? '#721c24' : '#383d41'
+                    }}>
+                      {sub.status === 'processing' ? '批改中' : sub.status === 'failed' ? '批改失败' : sub.status === 'pending' ? '待批改' : sub.status}
+                    </span>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {sub.homework_file_path && sub.homework_file_path.trim() !== '' && (
-                    <button 
-                      className="btn btn-secondary" 
+                    <button
+                      className="btn btn-secondary"
                       style={{ fontSize: '12px', padding: '6px 12px' }}
                       onClick={() => handleViewHomework(sub.id)}
                       disabled={loadingHomework === sub.id}

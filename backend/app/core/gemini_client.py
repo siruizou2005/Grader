@@ -227,7 +227,52 @@ def extract_json_from_report(md_text: str) -> dict:
         m = re.search(r"\{.*\}", text, flags=re.S)
         if not m:
             return {"questions": []}
-        return json.loads(m.group(0))
+        data = json.loads(m.group(0))
+    
+    # Calculate statistics locally
+    questions = data.get("questions", [])
+    total = len(questions)
+    counts = {"correct": 0, "partial": 0, "result_wrong": 0, "wrong": 0}
+    
+    score = 0.0
+    for q in questions:
+        status = q.get("status", "")
+        if status == "正确":
+            counts["correct"] += 1
+            score += 1.0
+        elif status == "过程部分正确":
+            counts["partial"] += 1
+            score += 0.5
+        elif status == "答案正确结果错误":
+             # Treat as partial for scoring, or maybe 0.8? Let's stick to 0.5 for now or just count it.
+             # The prompt says "四选一：『正确』『过程部分正确』『答案正确结果错误』『错误』"
+             # Let's map '答案正确结果错误' to 'result_wrong' in counts, and maybe give 0.5 points?
+             # User didn't specify exact points, but 0.5 seems fair for partial correctness.
+             counts["result_wrong"] += 1
+             score += 0.5
+        else:
+            counts["wrong"] += 1
+    
+    # Calculate Grade
+    grade = "F"
+    if total > 0:
+        percentage = (score / total) * 100
+        if percentage >= 90:
+            grade = "A"
+        elif percentage >= 80:
+            grade = "B"
+        elif percentage >= 70:
+            grade = "C"
+        elif percentage >= 60:
+            grade = "D"
+        else:
+            grade = "F"
+            
+    data["total_questions"] = total
+    data["counts"] = counts
+    data["grade"] = grade
+    
+    return data
 
 def generate_class_report(combined_md_path: Path) -> str:
     """

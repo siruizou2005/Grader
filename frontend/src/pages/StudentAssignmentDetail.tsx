@@ -86,10 +86,9 @@ export default function StudentAssignmentDetail() {
 
       await client.post(`/students/assignments/${id}/submit`, formData)
 
-      alert('作业提交成功，批改中...')
-      setTimeout(() => {
-        loadData()
-      }, 2000)
+      // Immediately reload to show pending status
+      await loadData()
+      alert('作业提交成功！')
     } catch (err: any) {
       setError(err.response?.data?.detail || '提交失败')
     } finally {
@@ -140,7 +139,35 @@ export default function StudentAssignmentDetail() {
 
         {submission && submission.status === 'pending' && (
           <div className="card">
-            <div className="success">作业已提交，正在批改中...</div>
+            <div className="success" style={{ background: '#e2e3e5', color: '#383d41', borderColor: '#d6d8db' }}>
+              作业已提交，等待进入批改队列...
+            </div>
+          </div>
+        )}
+
+        {submission && submission.status === 'processing' && (
+          <div className="card">
+            <div className="success" style={{ background: '#cce5ff', color: '#004085', borderColor: '#b8daff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="loading-spinner" style={{ width: '20px', height: '20px', border: '3px solid #f3f3f3', borderTop: '3px solid #007bff', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                作业正在AI批改中，请稍候... (通常需要1-2分钟)
+              </div>
+              <button
+                className="btn btn-secondary"
+                onClick={loadData}
+                style={{ marginTop: '10px', fontSize: '14px', padding: '4px 12px' }}
+              >
+                刷新状态
+              </button>
+            </div>
+          </div>
+        )}
+
+        {submission && submission.status === 'failed' && (
+          <div className="card">
+            <div className="error">
+              批改失败，请联系老师重试或重新提交。
+            </div>
           </div>
         )}
 
@@ -163,9 +190,9 @@ export default function StudentAssignmentDetail() {
                 <strong>等级:</strong> {report.grade}
               </div>
             )}
-            <div style={{ 
-              background: '#f5f5f5', 
-              padding: '20px', 
+            <div style={{
+              background: '#f5f5f5',
+              padding: '20px',
               borderRadius: '4px',
               maxHeight: '600px',
               overflow: 'auto'

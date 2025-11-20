@@ -1,14 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from pathlib import Path
 from app.database import get_db
 from app.models import User, Assignment, Submission, SubmissionStatus
-from app.schemas import SubmissionResponse, SubmissionDetail
+from app.schemas import SubmissionResponse
 from app.core.security import get_current_user
-from app.core.gemini_client import grade_homework, extract_json_from_report
-from app.core.json_processor import process_report_to_json, parse_name_id_from_filename
 from typing import List
-import os
+from app.services.grading_queue import enqueue_submission
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -77,60 +78,25 @@ async def submit_homework(
     db.add(submission)
     db.commit()
     db.refresh(submission)
-    
-    # 异步批改（这里简化处理，实际应该用后台任务）
+
+    # 入队等待后台批改
     try:
-        # 获取标准答案文件
-        answer_path = Path(assignment.answer_file_path)
-        if not answer_path.exists():
-            raise HTTPException(status_code=500, detail="标准答案文件不存在")
-        
-        # 调用批改API
-        report_md = grade_homework(homework_path, answer_path)
-        
-        # 保存报告（文件名包含学号和姓名，学生必须有学号）
-        if not current_user.student_id:
-            raise HTTPException(status_code=500, detail="学生学号未设置")
-        
-        report_filename = f"{current_user.student_id}-{current_user.username}-report.md"
-        json_filename = f"{current_user.student_id}-{current_user.username}-data.json"
-        
-        report_path = submission_dir / report_filename
-        report_path.write_text(report_md, encoding="utf-8")
-        
-        # 提取JSON数据
-        raw_json = extract_json_from_report(report_md)
-        # 使用数据库中的学号和姓名
-        student_name = current_user.username
-        student_id = current_user.student_id
-        
-        json_data = process_report_to_json(
-            report_md, student_name, student_id, raw_json.get("questions", [])
-        )
-        
-        # 保存JSON
-        json_path = submission_dir / json_filename
-        import json
-        json_path.write_text(
-            json.dumps(json_data, ensure_ascii=False, indent=2),
-            encoding="utf-8"
-        )
-        
-        # 更新提交记录
-        submission.report_file_path = str(report_path)
-        submission.json_file_path = str(json_path)
-        submission.status = SubmissionStatus.GRADED
-        submission.grade = json_data.get("grade")
-        db.commit()
-        
+        await enqueue_submission(submission.id)
+    except RuntimeError as e:
+        # 如果队列未初始化，记录错误但提交记录已保存
+        logger.error(f"Failed to enqueue submission {submission.id}: {e}")
+        # 不抛出异常，因为提交记录已经保存，可以稍后手动重试
         return {
             "success": True,
             "submission": SubmissionResponse.from_orm(submission),
-            "message": "作业提交成功，批改完成"
+            "message": "作业上传成功，但批改队列未初始化，请联系管理员"
         }
-    except Exception as e:
-        # 批改失败，但提交记录已保存
-        raise HTTPException(status_code=500, detail=f"批改失败: {str(e)}")
+    
+    return {
+        "success": True,
+        "submission": SubmissionResponse.from_orm(submission),
+        "message": "作业上传成功，已加入批改队列"
+    }
 
 @router.get("/assignments/{assignment_id}/submission", response_model=SubmissionResponse)
 async def get_my_submission(
@@ -170,7 +136,7 @@ async def get_my_report(
     if not submission:
         raise HTTPException(status_code=404, detail="未找到提交记录")
     
-    if submission.status.value != "published":
+    if submission.status != SubmissionStatus.PUBLISHED:
         raise HTTPException(status_code=403, detail="报告尚未发布")
     
     if not submission.report_file_path:

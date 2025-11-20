@@ -15,7 +15,9 @@ class AssignmentStatus(str, enum.Enum):
 
 class SubmissionStatus(str, enum.Enum):
     PENDING = "pending"  # 待批改
+    PROCESSING = "processing"  # 批改中
     GRADED = "graded"  # 已批改
+    FAILED = "failed"  # 批改失败
     PUBLISHED = "published"  # 已发布给学生
 
 class User(Base):

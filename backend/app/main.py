@@ -31,3 +31,10 @@ async def root():
 async def health():
     return {"status": "ok"}
 
+@app.on_event("startup")
+async def startup_event():
+    """启动时开始批改Worker"""
+    import asyncio
+    from app.services.grading_worker import start_grading_worker
+    asyncio.create_task(start_grading_worker())
+
