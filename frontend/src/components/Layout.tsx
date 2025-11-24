@@ -28,7 +28,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     <GraduationCap size={24} />
                   </div>
                   <span className="font-bold text-xl text-slate-900 tracking-tight">
-                    AI Grader
+                    Grader
                   </span>
                 </Link>
               </div>
