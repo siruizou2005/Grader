@@ -414,13 +414,57 @@ async def generate_class_report_endpoint(
         raise HTTPException(status_code=403, detail="无权访问此作业")
     
     # 获取所有已批改的提交
+    # 查询条件：状态为 GRADED 或 PUBLISHED，或者有报告文件路径的提交
+    from sqlalchemy import or_
     submissions = db.query(Submission).filter(
-        Submission.assignment_id == assignment_id,
-        Submission.status == SubmissionStatus.GRADED
+        Submission.assignment_id == assignment_id
+    ).filter(
+        or_(
+            Submission.status == SubmissionStatus.GRADED,
+            Submission.status == SubmissionStatus.PUBLISHED,
+            Submission.report_file_path.isnot(None)
+        )
     ).all()
     
-    if not submissions:
-        raise HTTPException(status_code=400, detail="没有已批改的提交")
+    # 进一步过滤：只保留有报告文件且文件存在的提交
+    valid_submissions = []
+    for s in submissions:
+        if s.report_file_path:
+            report_path = Path(s.report_file_path)
+            if report_path.exists():
+                valid_submissions.append(s)
+    
+    if not valid_submissions:
+        # 提供更详细的错误信息
+        total_submissions = db.query(Submission).filter(
+            Submission.assignment_id == assignment_id
+        ).count()
+        
+        graded_count = db.query(Submission).filter(
+            Submission.assignment_id == assignment_id,
+            Submission.status == SubmissionStatus.GRADED
+        ).count()
+        
+        published_count = db.query(Submission).filter(
+            Submission.assignment_id == assignment_id,
+            Submission.status == SubmissionStatus.PUBLISHED
+        ).count()
+        
+        with_report_count = db.query(Submission).filter(
+            Submission.assignment_id == assignment_id,
+            Submission.report_file_path.isnot(None)
+        ).count()
+        
+        error_msg = (
+            f"没有可用的批改报告。"
+            f"总提交数: {total_submissions}, "
+            f"已批改(GRADED): {graded_count}, "
+            f"已发布(PUBLISHED): {published_count}, "
+            f"有报告文件: {with_report_count}"
+        )
+        raise HTTPException(status_code=400, detail=error_msg)
+    
+    submissions = valid_submissions
     
     # 汇总所有学生的批改报告（只提取"批改报告"部分）
     combined_content = []

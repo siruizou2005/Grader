@@ -1,19 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../store/authStore'
+import { useNavigate } from 'react-router-dom'
 import client from '../api/client'
-import '../index.css'
-import './Dashboard.css'
+import { Calendar, FileText, Loader2, ChevronRight, Clock } from 'lucide-react'
 
 interface Assignment {
   id: number
   title: string
   deadline: string | null
   created_at: string
+  status?: string // Optional, if API returns submission status
 }
 
 export default function StudentDashboard() {
-  const { user, logout } = useAuthStore()
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
@@ -34,49 +32,65 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="app">
-      <header className="header">
-        <div className="header-content">
-          <h1>AI作业批改助手 - 学生端</h1>
-          <div className="header-actions">
-            <span>欢迎，{user?.username}</span>
-            <button className="btn btn-secondary" onClick={logout}>退出</button>
-          </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">待完成作业</h1>
+        <p className="text-slate-500 mt-1">查看和提交您的作业任务</p>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="animate-spin text-primary-600 h-8 w-8" />
         </div>
-      </header>
-      <nav className="nav">
-        <div className="nav-content">
-          <Link to="/student" className="nav-link active">待完成作业</Link>
-        </div>
-      </nav>
-      <div className="container">
-        <h2 style={{ marginBottom: '20px' }}>作业列表</h2>
-        {loading ? (
-          <div className="loading">加载中...</div>
-        ) : assignments.length === 0 ? (
-          <div className="card">
-            <p style={{ textAlign: 'center', color: '#666' }}>暂无作业</p>
+      ) : assignments.length === 0 ? (
+        <div className="card py-16 flex flex-col items-center text-center">
+          <div className="bg-slate-50 p-4 rounded-full mb-4">
+            <FileText className="h-8 w-8 text-slate-400" />
           </div>
-        ) : (
-          <div className="assignment-grid">
-            {assignments.map((assignment) => (
-              <div key={assignment.id} className="assignment-card" onClick={() => navigate(`/student/assignments/${assignment.id}`)}>
-                <h3>{assignment.title}</h3>
-                <div style={{ marginTop: '12px', color: '#666', fontSize: '14px' }}>
+          <h3 className="text-lg font-medium text-slate-900">暂无作业</h3>
+          <p className="text-slate-500 mt-1">
+            您当前没有需要完成的作业。
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {assignments.map((assignment) => (
+            <div 
+              key={assignment.id} 
+              className="card hover:shadow-md transition-shadow cursor-pointer group flex flex-col"
+              onClick={() => navigate(`/student/assignments/${assignment.id}`)}
+            >
+              <div className="p-6 flex-1">
+                <div className="flex justify-between items-start mb-4">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200">
+                    进行中
+                  </span>
                   {assignment.deadline && (
-                    <div>截止日期: {new Date(assignment.deadline).toLocaleDateString('zh-CN')}</div>
+                    <span className="text-xs text-slate-500 flex items-center gap-1 bg-slate-50 px-2 py-1 rounded">
+                      <Clock size={12} />
+                      {new Date(assignment.deadline).toLocaleDateString('zh-CN')} 截止
+                    </span>
                   )}
-                  <div style={{ marginTop: '4px' }}>发布时间: {new Date(assignment.created_at).toLocaleDateString('zh-CN')}</div>
                 </div>
-                <div style={{ marginTop: '8px', fontSize: '12px', color: '#007bff' }}>
-                  点击查看详情
+                
+                <h3 className="text-lg font-semibold text-slate-900 group-hover:text-primary-600 transition-colors line-clamp-2">
+                  {assignment.title}
+                </h3>
+                
+                <div className="mt-4 flex items-center text-sm text-slate-500">
+                  <Calendar size={14} className="mr-1.5" />
+                  <span>发布于 {new Date(assignment.created_at).toLocaleDateString('zh-CN')}</span>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              
+              <div className="border-t border-slate-100 px-6 py-4 bg-slate-50/50 rounded-b-xl flex justify-between items-center group-hover:bg-slate-50 transition-colors">
+                <span className="text-sm font-medium text-primary-600">去提交作业</span>
+                <ChevronRight size={16} className="text-slate-400 group-hover:text-primary-600 transition-colors" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
-

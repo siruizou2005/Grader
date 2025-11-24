@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
+import Layout from './components/Layout'
+import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import TeacherDashboard from './pages/TeacherDashboard'
@@ -25,7 +27,7 @@ function PrivateRoute({ children, requiredRole }: { children: React.ReactNode, r
     return <Navigate to="/" />
   }
   
-  return <>{children}</>
+  return <Layout>{children}</Layout>
 }
 
 function App() {
@@ -61,8 +63,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
         <Route path="/" element={
           isAuthenticated ? (
             user?.role === 'teacher' ? (
@@ -71,9 +71,11 @@ function App() {
               <Navigate to="/student" />
             )
           ) : (
-            <Navigate to="/login" />
+            <Home />
           )
         } />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/teacher" element={
           <PrivateRoute requiredRole="teacher">
             <TeacherDashboard />
