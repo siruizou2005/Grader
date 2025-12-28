@@ -1,0 +1,26 @@
+grader.kaixuebang.com {
+    root * /var/www/Grader/dist
+
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8000
+    }
+    
+    handle /docs {
+         reverse_proxy 127.0.0.1:8000
+    }
+
+    handle /openapi.json {
+         reverse_proxy 127.0.0.1:8000
+    }
+
+    handle {
+        file_server
+        try_files {path} /index.html
+    }
+}
+
+www.kaixuebang.com {
+    root * /var/www/kaixuebang-web
+    file_server
+    try_files {path} /index.html
+}

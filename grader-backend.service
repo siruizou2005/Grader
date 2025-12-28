@@ -1,0 +1,13 @@
+[Unit]
+Description=Grader Backend Service
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/Grader/backend
+Environment="PATH=/root/Grader/backend/venv/bin"
+ExecStart=/root/Grader/backend/venv/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 app.main:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
